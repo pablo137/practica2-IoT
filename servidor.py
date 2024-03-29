@@ -1,65 +1,63 @@
 import socket
-import os
-from _thread import *
-import time
+import threading
 
-ServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '192.168.0.7' #direccion ipv4 Lan inalambrica
-port = 5000
+# Función para manejar la conexión con cada cliente
+def handle_client(client_socket, client_address):
+    print(f"[*] Conexión establecida desde: {client_address[0]}:{client_address[1]}")
 
-reply = "NOT DEFINED"
+    try:
+        while True:
+            # Recibir datos del cliente
+            data = client_socket.recv(1024)
+            if not data:
+                break
+            
+            # Imprimir los datos recibidos
+            print(f"Datos recibidos desde {client_address[0]}:{client_address[1]}: {data.decode('utf-8')}")
 
+            # Reenviar los datos al otro cliente
+            other_client_socket.sendall(data)
+
+    except ConnectionResetError:
+        print(f"Conexión con {client_address} cerrada.")
+    finally:
+        client_socket.close()
+
+# Configuración del servidor
+HOST = '192.168.0.7'  # Escuchar en todas las interfaces de red
+PORT = 5000
+
+# Crear un socket TCP
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# Enlazar el socket al host y puerto especificados
+server_socket.bind((HOST, PORT))
+
+# Escuchar conexiones entrantes
+server_socket.listen(2)  # Máximo 2 conexiones simultáneas
+
+print(f"[*] Escuchando en {HOST}:{PORT}")
+
+# Esperar y manejar conexiones entrantes
 try:
-    ServerSocket.bind((host, port))
-except socket.error as e:
-    print(str(e))
+    # Aceptar la primera conexión
+    client_socket1, client_address1 = server_socket.accept()
+    
+    # Imprimir que se ha conectado el primer cliente
+    print(f"[*] Primer cliente conectado desde: {client_address1[0]}:{client_address1[1]}")
+    
+    # Aceptar la segunda conexión
+    client_socket2, client_address2 = server_socket.accept()
+    
+    # Imprimir que se ha conectado el segundo cliente
+    print(f"[*] Segundo cliente conectado desde: {client_address2[0]}:{client_address2[1]}")
 
-print('Waiting for a Connection...')
-ServerSocket.listen(1)
+    # Crear dos hilos para manejar la comunicación con cada cliente
+    threading.Thread(target=handle_client, args=(client_socket1, client_address1)).start()
+    threading.Thread(target=handle_client, args=(client_socket2, client_address2)).start()
 
-print(f"[*] Escuchando en {host}:{port}")
+except KeyboardInterrupt:
+    print("Servidor apagado manualmente.")
+finally:
+    server_socket.close()
 
-def threaded_client(connection, client_address):
-    global reply
-    while True:
-        # Recibe los datos del cliente
-        data = connection.recv(1024).decode('utf-8')
-        #distance = int(data)   
-        # Verificar si la cadena es convertible a un entero
-        if data.strip():  # Verifica si la cadena no está vacía después de eliminar los espacios en blanco
-            try:
-                distance = int(data)
-                print("Número recibido:", distance)
-            except ValueError:
-                print("La cadena no es convertible a un entero válido:", data)
-                distance = -1  # Asignar un valor predeterminado en caso de error
-        else:
-             distance = -1  # Asignar un valor predeterminado si la cadena está vacía
-
-        # Actualiza la variable 'reply' según la distancia
-        if distance < 0:
-            reply = "NOT DEFINED"
-        elif distance < 30:
-            reply = "BLUE"
-        elif 30 <= distance < 60:
-            reply = "ORANGE"
-        elif 60 <= distance < 120:
-            reply = "RED"
-
-        # Envía 'reply' al cliente
-        try:
-            connection.sendall(reply.encode('utf-8'))
-        except ConnectionAbortedError as e:
-            print("Error al enviar respuesta al cliente:", e)
-
-        time.sleep(1)
-
-    connection.close()
-
-with ServerSocket:
-    while True:
-        client_socket, client_address = ServerSocket.accept()
-        print(f"[*] Conexión establecida desde: {client_address[0]}:{client_address[1]}")
-        threaded_client(client_socket, client_address)
-
-ServerSocket.close()
