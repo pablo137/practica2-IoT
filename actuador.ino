@@ -1,16 +1,21 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-int cm = 0;
-  
 int ports[3] = {32, 33, 26}; //Puertos del MCU
 
-WiFiClient client;
 const char *WIFI_SSID = "LOPEZ";
-const char *WIFI_PASS = "76486651NL";
+const char *WIFI_PASS = "76486651";
 
-const char *SERVER_ADDRESS = "192.168.0.14"; 
-const int SERVER_PORT = 5000;            
+const char *SERVER_ADDRESS = "192.168.0.8"; //YOUR_SERVER_IP_ADDRESS mi maquina 192.168.78.48
+const int SERVER_PORT = 5000;            //YOUR_SERVER_PORT
+
+  byte mac[] = {
+    0xDE,
+    0xED,
+    0xBA,
+    0xFE,
+    0xFE,
+    0xED};
 
 void setup() 
 {
@@ -20,6 +25,7 @@ void setup()
     }
     
   Serial.begin(115200);
+  
   Serial.print("Connecting to: ");
   Serial.println(WIFI_SSID);
   
@@ -33,84 +39,60 @@ void setup()
   
   Serial.print("\nÏP address: "); 
   Serial.println(WiFi.localIP());
-  //Conexion al servidor
+}
+
+void loop() 
+{ 
+  delay(3000);
+ 
   Serial.print("Connecting to: ");
   Serial.println(SERVER_ADDRESS);
+  
+  WiFiClient client;
   
   if(!client.connect(SERVER_ADDRESS, SERVER_PORT))
   {
     Serial.println("Connection failed!");
     delay(5000);
-    reconnect(); 
+    return; //va a volver a iniciar el codigo 
   }
-}
-
-long readUltrasonicDistance(int triggerPin, int echoPin)
-{
-    digitalWrite(triggerPin, LOW);
-    delayMicroseconds(2);
-    digitalWrite(triggerPin, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(triggerPin, LOW);
-    pinMode(echoPin, INPUT);
-    return pulseIn(echoPin, HIGH); //Se devolvera el tiempo entre el envio y la recepcion
-}
-
-void reconnect() {
-  // Loop hasta que estemos reconectados
-  while (!client.connected()) {
-    Serial.print("Intentando reconectar al servidor...");
-    // Intenta conectarte al servidor
-    if (client.connect(SERVER_ADDRESS, SERVER_PORT)) {
-      Serial.println("Conectado");
-    } else {
-      // Si no podemos conectarnos, esperamos un tiempo antes de intentar nuevamente
-      Serial.print("Error al conectar al servidor, esperando ");
-      Serial.print(3);
-      Serial.println(" segundos antes de volver a intentar...");
-      delay(3 * 1000);
-    }
-  }
-}
-
-void loop() 
-{ 
-  cm = 0.01723 * readUltrasonicDistance(trigger,echo); //se calculara la distancia multiplicando la velocidad en la que el sonido recorre un centimetro por el tiempo de rebote obtenido.
-              
-  client.print(cm); //manda por internet al server los cm
   
   unsigned long timeout = millis();
   
-  if (!client.connected()) 
+  while(client.available() == 0)
   {
-    Serial.println("Conexión perdida con el servidor, intentando reconectar...");
-    // Intentar reconectar
-    reconnect();
+    if(millis()-timeout>10000)
+    {
+        Serial.println("Server timeout");
+        client.stop();
+        return;
+    }  
   }
    
-  if (client.connected() && client.available() > 0) {
-    String line = client.readStringUntil('\n');
-
-    if (line == "BLUE") {
+  if(client.available()>0)
+  {    
+      String line = client.readStringUntil('\n'); 
+      
+      if (line == "BLUE") 
+      {
         digitalWrite(ports[0], HIGH);
-        delay(1000);
+        delay(1000); 
         digitalWrite(ports[0], LOW);
-    } else if (line == "ORANGE") {
+      }
+      if(line == "ORANGE")
+      {
         digitalWrite(ports[1], HIGH);
-        delay(1000);
+        delay(1000); 
         digitalWrite(ports[1], LOW);
-    } else if (line == "RED") {
+      }
+      if(line == "RED")
+      {
         digitalWrite(ports[2], HIGH);
-        delay(1000);  
-        digitalWrite(ports[2], LOW);
-    }
-  } 
-  else {
-    // Aquí puedes manejar la pérdida de conexión, por ejemplo:
-    Serial.println("¡Conexión perdida!");
-    reconnect();
+        delay(1000); 
+        digitalWrite(ports[2], LOW); 
+      }    
   }
-
+  
   //Serial.println("Cerrando conection.");
   Serial.println("Closing connection.");
   client.stop();  
