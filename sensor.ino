@@ -8,16 +8,8 @@ int cm = 0;
 const char *WIFI_SSID = "LABO19";
 const char *WIFI_PASS = "catolica19";
 
-const char *SERVER_ADDRESS = "192.168.79.239"; //YOUR_SERVER_IP_ADDRESS mi maquina 192.168.78.48
+const char *SERVER_ADDRESS = "192.168.0.7"; //YOUR_SERVER_IP_ADDRESS mi maquina 192.168.78.48
 const int SERVER_PORT = 5000;            //YOUR_SERVER_PORT
-
-  byte mac[] = {
-    0xDE,
-    0xED,
-    0xBA,
-    0xFE,
-    0xFE,
-    0xED};
 
 void setup() 
 {
@@ -70,7 +62,7 @@ void loop()
   {
     Serial.println("Connection failed!");
     delay(5000);
-    return; //va a volver a iniciar el codigo 
+    reconect(); //va a volver a iniciar el codigo 
   }
             
   Serial.print(cm); //manda al serial los cm leidos
@@ -80,4 +72,5 @@ void loop()
   //Serial.println("Cerrando conection.");
   Serial.println("Closing connection.");
   client.stop(); 
+}
 }
