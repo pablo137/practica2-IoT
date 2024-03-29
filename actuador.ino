@@ -4,7 +4,7 @@
 int ports[3] = {32, 33, 26}; //Puertos del MCU
 
 const char *WIFI_SSID = "LOPEZ";
-const char *WIFI_PASS = "76486651";
+const char *WIFI_PASS = "76486651NL";
 
 const char *SERVER_ADDRESS = "192.168.0.8"; //YOUR_SERVER_IP_ADDRESS mi maquina 192.168.78.48
 const int SERVER_PORT = 5000;            //YOUR_SERVER_PORT
