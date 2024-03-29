@@ -1,8 +1,6 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-#define echo 16
-#define trigger 15
 int cm = 0;
   
 int ports[3] = {32, 33, 26}; //Puertos del MCU
@@ -14,27 +12,14 @@ const char *WIFI_PASS = "76486651NL";
 const char *SERVER_ADDRESS = "192.168.0.14"; 
 const int SERVER_PORT = 5000;            
 
-  byte mac[] = {
-    0xDE,
-    0xED,
-    0xBA,
-    0xFE,
-    0xFE,
-    0xED};
-
 void setup() 
 {
     for (int i = 0; i < 3; i++)
     {
       pinMode(ports[i], OUTPUT);
     }
-    pinMode(trigger, OUTPUT);
-    pinMode(echo, INPUT);
-    digitalWrite(trigger, LOW);//Inicializamos el pin con 0
-  
+    
   Serial.begin(115200);
-  pinMode(trigger, OUTPUT);
-  pinMode(echo, INPUT);
   Serial.print("Connecting to: ");
   Serial.println(WIFI_SSID);
   
@@ -56,7 +41,7 @@ void setup()
   {
     Serial.println("Connection failed!");
     delay(5000);
-    return; //va a volver a iniciar el codigo 
+    reconnect(); 
   }
 }
 
