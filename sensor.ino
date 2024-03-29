@@ -1,12 +1,11 @@
 #include <WiFi.h>
-#include <PubSubClient.h>
 
 #define echo 16
 #define trigger 15
 int cm = 0;
 
-const char *WIFI_SSID = "LABO19";
-const char *WIFI_PASS = "catolica19";
+const char *WIFI_SSID = "LOPEZ";
+const char *WIFI_PASS = "76486651NL";
 
 const char *SERVER_ADDRESS = "192.168.0.7"; //YOUR_SERVER_IP_ADDRESS mi maquina 192.168.78.48
 const int SERVER_PORT = 5000;            //YOUR_SERVER_PORT
@@ -52,7 +51,7 @@ void loop()
 { 
   delay(3000);
   cm = 0.01723 * readUltrasonicDistance(trigger,echo); //se calculara la distancia multiplicando la velocidad en la que el sonido recorre un centimetro por el tiempo de rebote obtenido.
-  
+ 
   Serial.print("Connecting to: ");
   Serial.println(SERVER_ADDRESS);
   
@@ -62,15 +61,7 @@ void loop()
   {
     Serial.println("Connection failed!");
     delay(5000);
-    reconect(); //va a volver a iniciar el codigo 
+    return; //va a volver a iniciar el codigo 
   }
-            
-  Serial.print(cm); //manda al serial los cm leidos
-  Serial.print("\n"); 
-  client.print(cm); //manda por internet al server los cm
-
-  //Serial.println("Cerrando conection.");
-  Serial.println("Closing connection.");
-  client.stop(); 
-}
+  client.println(String(cm));  //manda por internet al server los cm
 }
