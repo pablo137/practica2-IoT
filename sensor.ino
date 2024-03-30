@@ -1,67 +1,53 @@
 #include <WiFi.h>
 
-#define echo 16
-#define trigger 15
-int cm = 0;
+const char * WIFI_SSID = "2611PB";
+const char * WIFI_PASS = "26110000";
+const char * SERVER_ADDRESS = "192.168.43.123";
+const int SERVER_PORT = 1234; 
+const int TRIGGER_PIN = 15;
+const int ECHO_PIN = 16;
 
-const char *WIFI_SSID = "LOPEZ";
-const char *WIFI_PASS = "76486651NL";
+class DistanceSensor {
+public:
+    long readDistance(int triggerPin, int echoPin) {
+        pinMode(triggerPin, OUTPUT); 
+        digitalWrite(triggerPin, LOW);
+        delayMicroseconds(2);
+        digitalWrite(triggerPin, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(triggerPin, LOW);
+        pinMode(echoPin, INPUT);
+        return pulseIn(echoPin, HIGH);
+    }
+};
 
-const char *SERVER_ADDRESS = "192.168.0.7"; //YOUR_SERVER_IP_ADDRESS mi maquina 192.168.78.48
-const int SERVER_PORT = 5000;            //YOUR_SERVER_PORT
+void setup() {
+    Serial.begin(115200);
+    Serial.print("Connecting to: ");
+    Serial.print(WIFI_SSID);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(200);
+        Serial.print(".");
+    }
 
-void setup() 
-{
-   Serial.begin(115200);
-    
-    pinMode(trigger, OUTPUT);
-    pinMode(echo, INPUT);
-    digitalWrite(trigger, LOW);//Inicializamos el pin con 0
-  
-  
-  pinMode(trigger, OUTPUT);
-  pinMode(echo, INPUT);
-  Serial.print("Connecting to: ");
-  Serial.println(WIFI_SSID);
-  
-  WiFi.begin(WIFI_SSID, WIFI_PASS); 
-
-  while(WiFi.status() != WL_CONNECTED)
-  {
-      delay(500);
-      Serial.print(".");
-  }
-  
-  Serial.print("\nÏP address: "); 
-  Serial.println(WiFi.localIP());
+    Serial.print("\nIP address: ");
+    Serial.println(WiFi.localIP());
 }
 
-  long readUltrasonicDistance(int triggerPin, int echoPin)
-  {
-    digitalWrite(triggerPin, LOW);
-    delayMicroseconds(2);
-    digitalWrite(triggerPin, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(triggerPin, LOW);
-    pinMode(echoPin, INPUT);
-    return pulseIn(echoPin, HIGH); //Se devolvera el tiempo entre el envio y la recepcion
-  }
+void loop() {
+    DistanceSensor distanceSensor;
+    long cm = 0.01723 * distanceSensor.readDistance(TRIGGER_PIN, ECHO_PIN);
+    WiFiClient client;
+    if (!client.connect(SERVER_ADDRESS, SERVER_PORT)) {
+        Serial.println("Connection Sensor to Server failed");
+        return;
+    }
+    Serial.print(cm);
+    Serial.println(" cm");
+    delay(200);
 
-void loop() 
-{ 
-  delay(3000);
-  cm = 0.01723 * readUltrasonicDistance(trigger,echo); //se calculara la distancia multiplicando la velocidad en la que el sonido recorre un centimetro por el tiempo de rebote obtenido.
- 
-  Serial.print("Connecting to: ");
-  Serial.println(SERVER_ADDRESS);
-  
-  WiFiClient client;
-  
-  if(!client.connect(SERVER_ADDRESS, SERVER_PORT))
-  {
-    Serial.println("Connection failed!");
-    delay(5000);
-    return; //va a volver a iniciar el codigo 
-  }
-  client.println(String(cm));  //manda por internet al server los cm
+    String set = "SET " + String(cm) + "\n";
+    client.print(set.c_str()); 
+    delay(200);
 }
